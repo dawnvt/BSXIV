@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Commands\FFXIV" />
       <Folder Include="FFXIV\Commands" />
     </ItemGroup>
 
