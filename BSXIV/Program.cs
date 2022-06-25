@@ -55,16 +55,12 @@ namespace BSXIV
             await _logging.Log(LogSeverity.Info, $"{Constants.AppCopyright}");
             await _logging.Log(LogSeverity.Info, "===============================");
 
-            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
-            await _client.StartAsync();
-
-            await _logging.Log(LogSeverity.Debug, "Debug");
-            await _logging.Log(LogSeverity.Info, "Info");
-            await _logging.Log(LogSeverity.Warning, "Warning");
-            await _logging.Log(LogSeverity.Error, "Error");
-            await _logging.Log(LogSeverity.Critical, "Critical");
             
             // Do not touch anything below this line.
+            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
+            await _client.StartAsync();
+            
+            
             await Task.Delay(-1);
         }
     }    

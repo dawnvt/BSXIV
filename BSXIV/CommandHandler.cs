@@ -26,10 +26,10 @@ namespace BSXIV
 
         public async Task InitializeAsync()
         {
-            var modules = _interaction.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            var modules = await _interaction.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             foreach (var servers in _client.Guilds)
             {
-                // await _interaction.AddModulesToGuildAsync(servers, true, modules.ToArray());
+                await _interaction.AddModulesToGuildAsync(servers, true, modules.ToArray());
             }
         }
     }

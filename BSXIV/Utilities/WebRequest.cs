@@ -19,7 +19,12 @@ namespace BSXIV.Utilities
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
             _logging = logging;
         }
-        
+
+        internal async Task<string> MakeRequestAsync(string url)
+        {
+            return await MakeRequestAsync(url, CancellationToken.None);
+        }
+
         internal async Task<string> MakeRequestAsync(string url, CancellationToken cancellationToken, 
             Action<float> progressCallback = null!)
         {
