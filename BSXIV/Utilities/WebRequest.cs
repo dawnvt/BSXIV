@@ -20,20 +20,20 @@ namespace BSXIV.Utilities
             _logging = logging;
         }
 
-        internal async Task<string> MakeRequestAsync(string url)
+        internal async Task<Stream?> MakeRequestAsync(string url)
         {
             return await MakeRequestAsync(url, CancellationToken.None);
         }
 
-        internal async Task<string> MakeRequestAsync(string url, CancellationToken cancellationToken, 
+        private async Task<Stream?> MakeRequestAsync(string url, CancellationToken cancellationToken, 
             Action<float> progressCallback = null!)
         {
             var webRequest = _httpClient.GetAsync(url, cancellationToken);
-            string responseStream = null!;
+            Stream? responseStream = null;
             try
             {
                 var response = await webRequest.ConfigureAwait(false);
-                responseStream = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 
             }
             catch (Exception e)
