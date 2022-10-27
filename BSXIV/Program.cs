@@ -80,7 +80,7 @@ namespace BSXIV
             var config = new DiscordSocketConfig { MessageCacheSize = 100 };
             return new ServiceCollection()
                 .AddSingleton(new DiscordSocketClient(config))
-                .AddSingleton(provider => new InteractionService((DiscordSocketClient)provider.GetRequiredService<DiscordSocketClient>()))
+                .AddSingleton(provider => new InteractionService(provider.GetRequiredService<DiscordSocketClient>()))
                 .AddSingleton<CommandHandler>()
                 .BuildServiceProvider();
         }
