@@ -22,24 +22,15 @@ namespace BSXIV.Utilities
     {
         public Task Log(LogSeverity severity, string msg)
         {
-            switch (severity)
+            Console.ForegroundColor = severity switch
             {
-                case LogSeverity.Debug:
-                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                    break;
-                case LogSeverity.Info:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
-                case LogSeverity.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
-                case LogSeverity.Error:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
-                case LogSeverity.Critical:
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    break;
-            }
+                LogSeverity.Debug => ConsoleColor.DarkMagenta,
+                LogSeverity.Info => ConsoleColor.White,
+                LogSeverity.Warning => ConsoleColor.Yellow,
+                LogSeverity.Error => ConsoleColor.Red,
+                LogSeverity.Critical => ConsoleColor.DarkRed,
+                _ => Console.ForegroundColor
+            };
             Console.WriteLine($"[{DateTime.UtcNow}] [{NameOfCallingClass()}] [{severity.ToString()}] {msg}");
             Console.ForegroundColor = ConsoleColor.White;
             return Task.CompletedTask;

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
 using BSXIV.Utilities;
 using Discord;
 using Discord.Interactions;
@@ -61,20 +62,37 @@ namespace BSXIV.BeatSaber.Commands.ScoreSaber
         }
         
         [SlashCommand("recentscore", "Shows the most recent score of your ScoreSaber user")]
-        public void RecentScore(string scoreSaberId = "")
+        public async void RecentScore(string scoreSaberId = "")
         {
             if (scoreSaberId == string.Empty)
             {
                 if (_dbContext.FindOne("users", new BsonDocument{{"userId", (long)Context.User.Id}}) == null)
                 {
-                    RespondAsync("You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
+                    await RespondAsync("You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
                 }
             }
             else
             {
                 var url = $"https://scoresaber.com/api/players/{scoreSaberId}/scores?limit=1&sort=recent";
-                _webRequest.MakeRequestAsync(url).ConfigureAwait(false).GetAwaiter().GetResult();
+                var res = _webRequest.MakeRequestAsync(url).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                try
+                {
+                    if (res != null)
+                    {
+                        await RespondAsync($"Could not find scores for user `{scoreSaberId}` in the database.");
+                    }
+
+                }
+                catch (Exception ex) { /* ignored */ }
             }
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"Most recent score for `{scoreSaberId}`",
+            };
+                
+            await ReplyAsync(embed: embed.Build());
         }
 
         [SlashCommand("newestqualified", "Shows the most recent qualified ScoreSaber map")]
@@ -99,7 +117,7 @@ namespace BSXIV.BeatSaber.Commands.ScoreSaber
 
             if (response == null)
             {
-                await RespondAsync("No leaderboard found for this map.");
+                await RespondAsync($"No leaderboard found for {leaderboardId}. Did you specify the right leaderboard id?");
             }
             else
             {
@@ -113,11 +131,18 @@ namespace BSXIV.BeatSaber.Commands.ScoreSaber
 
                 if (leaderboard?.PlayerScores != null)
                 {
-                    foreach (var score in leaderboard.PlayerScores)
+                    var score = leaderboard.PlayerScores;
+                    for (var i = 0; i < 10; i++)
                     {
-                        embed.AddField($"{score.Score.Rank}. {score.Score.ModifiedScore}",
-                            $"{score.Score.Pp}pp");
+                        embed.AddField($"{score[i].Score.Rank}. {score[i].Score.ModifiedScore}", 
+                            $"{score[i].Score.Pp}pp");
                     }
+                    
+                    // foreach (var score in leaderboard.PlayerScores)
+                    // {
+                    //     embed.AddField($"{score.Score.Rank}. {score.Score.ModifiedScore}",
+                    //         $"{score.Score.Pp}pp");
+                    // }
                 }
 
                 await ReplyAsync(embed: embed.Build());

@@ -15,6 +15,8 @@ namespace BSXIV
             _client = services.GetRequiredService<DiscordSocketClient>();
             _interaction = services.GetRequiredService<InteractionService>();
             _services = services;
+
+            _client.SlashCommandExecuted += SlashCommand;
         }
 
         private async Task SlashCommand(SocketSlashCommand args)

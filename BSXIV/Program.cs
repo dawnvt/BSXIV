@@ -5,6 +5,7 @@ using BSXIV.Utilities;
 using Discord;
 using Discord.WebSocket;
 using BSXIV.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 using LogSeverity = BSXIV.Utilities.LogSeverity;
 using DLogSeverity = Discord.LogSeverity;
 
@@ -14,7 +15,9 @@ namespace BSXIV
     {
         private DiscordSocketClient _client;
         private LoggingUtils _logging;
-        
+        private IServiceProvider _services;
+        private CommandHandler _commands;
+
         public static Version AppVersion;
 
         public Program(LoggingUtils logging)
@@ -56,10 +59,14 @@ namespace BSXIV
             await _logging.Log(LogSeverity.Info, "===============================");
 
             
-            // Do not touch anything below this line.
+            // Do not touch anything below this line unless you absolutely have to.
             await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
             await _client.StartAsync();
             
+            _client.Ready += async () =>
+            {
+                await _services.GetRequiredService<CommandHandler>().InitializeAsync();
+            };
             
             await Task.Delay(-1);
         }

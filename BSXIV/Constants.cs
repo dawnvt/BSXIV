@@ -1,6 +1,6 @@
 ﻿namespace BSXIV
 {
-    public class Constants
+    public static class Constants
     {
         public const string AppName = "BSXIV";
         private const string AppAuthor = "Raine and WildWolf";
