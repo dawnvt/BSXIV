@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Reflection;
+using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using BSXIV.Utilities;
 using Discord;
 using Discord.WebSocket;
 using BSXIV.Utilities;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using LogSeverity = BSXIV.Utilities.LogSeverity;
 using DLogSeverity = Discord.LogSeverity;
@@ -33,6 +35,8 @@ namespace BSXIV
             
             var exeAsm = Assembly.GetExecutingAssembly();
             AppVersion = exeAsm.GetName().Version ?? new Version(0, 0, 0);
+
+            _services = ConfigureServices();
             
             _client = new();
             _client.Log += (msg) =>
@@ -69,6 +73,16 @@ namespace BSXIV
             };
             
             await Task.Delay(-1);
+        }
+        
+        private IServiceProvider ConfigureServices()
+        {
+            var config = new DiscordSocketConfig { MessageCacheSize = 100 };
+            return new ServiceCollection()
+                .AddSingleton(new DiscordSocketClient(config))
+                .AddSingleton(provider => new InteractionService((DiscordSocketClient)provider.GetRequiredService<DiscordSocketClient>()))
+                .AddSingleton<CommandHandler>()
+                .BuildServiceProvider();
         }
     }    
 }
