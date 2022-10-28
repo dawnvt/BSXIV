@@ -82,6 +82,8 @@ namespace BSXIV
                 .AddSingleton(new DiscordSocketClient(config))
                 .AddSingleton(provider => new InteractionService(provider.GetRequiredService<DiscordSocketClient>()))
                 .AddSingleton<CommandHandler>()
+                .AddSingleton<DbContext>()
+                .AddSingleton<LoggingUtils>()
                 .BuildServiceProvider();
         }
     }    
