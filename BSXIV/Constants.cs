@@ -1,4 +1,4 @@
-﻿namespace BSXIV
+namespace BSXIV
 {
     public static class Constants
     {

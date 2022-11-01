@@ -17,15 +17,20 @@ namespace BSXIV
 
         private void MongoConnection()
         {
-            _client = new MongoClient(
-                Environment.GetEnvironmentVariable("MONGODB")
-                );
-            var settings = 
-                MongoClientSettings.FromConnectionString(
-                    Environment.GetEnvironmentVariable("MONGODB")
-                );
-            settings.MaxConnectionIdleTime = TimeSpan.FromSeconds(30);
-                
+            var variables = Environment.GetEnvironmentVariables();
+
+            var conString = Environment.GetEnvironmentVariable("MONGODB");
+
+            var settings = MongoClientSettings.FromConnectionString(conString);
+#if DEBUG
+            settings.ConnectTimeout = TimeSpan.FromSeconds(5);
+#else
+            settings.ConnectTimeout = TimeSpan.FromSeconds(30);
+#endif
+            _client = new MongoClient(settings);
+
+            _client.StartSession();
+
             _logging.Log(LogSeverity.Info, "Started MongoDB connection successfully!");
         }
 
@@ -35,35 +40,35 @@ namespace BSXIV
             var dbCollection = db.GetCollection<BsonDocument>(collection);
             dbCollection.InsertOne(insert);
         }
-        
+
         public List<BsonDocument> Find(string collection, BsonDocument search)
         {
             var db = _client.GetDatabase("bsxiv");
             var dbCollection = db.GetCollection<BsonDocument>(collection);
             return dbCollection.Find(search).ToList();
         }
-        
+
         public BsonDocument? FindOne(string collection, BsonDocument search)
         {
             var db = _client.GetDatabase("bsxiv");
             var dbCollection = db.GetCollection<BsonDocument>(collection);
             return dbCollection.Find(search).FirstOrDefault();
         }
-        
+
         public void Update(string collection, BsonDocument search, BsonDocument set)
         {
             var db = _client.GetDatabase("bsxiv");
             var dbCollection = db.GetCollection<BsonDocument>(collection);
             dbCollection.UpdateOne(search, set);
         }
-        
+
         public void UpdateMany(string collection, BsonDocument search, BsonDocument set)
         {
             var db = _client.GetDatabase("bsxiv");
             var dbCollection = db.GetCollection<BsonDocument>(collection);
             dbCollection.UpdateMany(search, set);
         }
-        
+
         public void Delete(string collection, BsonDocument search)
         {
             var db = _client.GetDatabase("bsxiv");

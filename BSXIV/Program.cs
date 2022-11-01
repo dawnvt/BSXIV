@@ -2,10 +2,10 @@
 using System.Reflection;
 using System.Security.Authentication.ExtendedProtection;
 using System.Text;
+using System.Text.Json;
 using BSXIV.Utilities;
 using Discord;
 using Discord.WebSocket;
-using BSXIV.Utilities;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using LogSeverity = BSXIV.Utilities.LogSeverity;
@@ -21,6 +21,12 @@ namespace BSXIV
         private CommandHandler _commands;
 
         public static Version AppVersion;
+
+        public static JsonSerializerOptions Options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public Program(LoggingUtils logging)
         {
@@ -38,7 +44,7 @@ namespace BSXIV
 
             _services = ConfigureServices();
             
-            _client = new();
+            _client = _services.GetRequiredService<DiscordSocketClient>();
             _client.Log += (msg) =>
             {
                 var severity = msg.Severity switch
@@ -53,6 +59,11 @@ namespace BSXIV
                 return _logging.Log(severity, $"[{msg.Source}] {msg.Message}");
             };
 
+            _client.Ready += async () =>
+            {
+                await _services.GetRequiredService<CommandHandler>().InitializeAsync();
+            };
+
             await _logging.Log(LogSeverity.Info, "===============================");
             await _logging.Log(LogSeverity.Info, $"Starting up {Constants.AppName} on version {AppVersion}");
             await _logging.Log(LogSeverity.Info, "===============================");
@@ -64,13 +75,9 @@ namespace BSXIV
 
             
             // Do not touch anything below this line unless you absolutely have to.
-            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
+            var token = Environment.GetEnvironmentVariable("TOKEN");
+            await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
-            
-            _client.Ready += async () =>
-            {
-                await _services.GetRequiredService<CommandHandler>().InitializeAsync();
-            };
             
             await Task.Delay(-1);
         }
@@ -84,6 +91,7 @@ namespace BSXIV
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<DbContext>()
                 .AddSingleton<LoggingUtils>()
+                .AddSingleton<WebRequest>(provider => new WebRequest(provider.GetRequiredService<LoggingUtils>()))
                 .BuildServiceProvider();
         }
     }    
