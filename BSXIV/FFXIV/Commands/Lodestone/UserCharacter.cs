@@ -1,6 +1,9 @@
-﻿namespace BSXIV.Commands.FFXIV.Lodestone
+﻿using Discord.Interactions;
+
+namespace BSXIV.FFXIV.Commands.Lodestone
 {
-    public class UserCharacter
+    [RequireContext(ContextType.Guild)]
+    public class UserCharacter : InteractionModuleBase
     {
         
     }
