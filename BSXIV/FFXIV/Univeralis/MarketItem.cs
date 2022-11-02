@@ -1,4 +1,4 @@
-﻿namespace BSXIV.Commands.XIV.Univeralis
+﻿namespace BSXIV.XIV.Univeralis
 {
     public class MarketItem
     {

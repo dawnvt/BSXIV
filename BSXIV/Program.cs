@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using System.Text.Json;
+using BSXIV.FFXIV.Lodestone;
 using BSXIV.Utilities;
 using Discord;
 using Discord.WebSocket;
@@ -10,6 +11,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using LogSeverity = BSXIV.Utilities.LogSeverity;
 using DLogSeverity = Discord.LogSeverity;
+using StackExchange.Redis;
 
 namespace BSXIV
 {
@@ -92,6 +94,9 @@ namespace BSXIV
                 .AddSingleton<DbContext>()
                 .AddSingleton<LoggingUtils>()
                 .AddSingleton<WebRequest>(provider => new WebRequest(provider.GetRequiredService<LoggingUtils>()))
+                .AddSingleton<LodestoneRequester>()
+                .AddSingleton(_ => ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS")!))
+                .AddSingleton(provider => new CharacterProcessor(provider.GetRequiredService<LoggingUtils>(), provider.GetRequiredService<LodestoneRequester>(), provider.GetRequiredService<DbContext>(), provider.GetRequiredService<ConnectionMultiplexer>()))
                 .BuildServiceProvider();
         }
     }    
