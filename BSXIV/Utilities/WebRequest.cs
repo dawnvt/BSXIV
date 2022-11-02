@@ -9,15 +9,15 @@ namespace BSXIV.Utilities
     public class WebRequest
     {
         private HttpClient _httpClient;
-        private LoggingUtils _logging;
+        private Log _logging;
 
-        public WebRequest(LoggingUtils logging)
+        public WebRequest()
         {
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("User-Agent", 
                 $"{Constants.AppName}/{GetType().Assembly.GetName().Version}");
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
-            _logging = logging;
+            // _logging = logging;
         }
 
         internal async Task<Stream?> MakeRequestAsync(string url) => await MakeRequestAsync(new Uri(url));
@@ -38,14 +38,13 @@ namespace BSXIV.Utilities
             try
             {
                 var response = await webRequest.ConfigureAwait(false);
-                await _logging.Log(LogSeverity.Debug, response.StatusCode.ToString());
                 if(response.IsSuccessStatusCode)
                     responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 
             }
             catch (Exception e)
             {
-                await _logging.Log(LogSeverity.Error, e.Message);
+                // await _logging.Log(LogSeverity.Error, e.Message);
             }
 
             return responseStream;

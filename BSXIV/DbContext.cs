@@ -6,12 +6,10 @@ namespace BSXIV
 {
     public class DbContext
     {
-        private LoggingUtils _logging;
         private static MongoClient _client;
 
-        public DbContext(LoggingUtils logging)
+        public DbContext()
         {
-            _logging = logging;
             MongoConnection();
         }
 
@@ -30,8 +28,6 @@ namespace BSXIV
             _client = new MongoClient(settings);
 
             _client.StartSession();
-
-            _logging.Log(LogSeverity.Info, "Started MongoDB connection successfully!");
         }
 
         public void Insert(string collection, BsonDocument insert)

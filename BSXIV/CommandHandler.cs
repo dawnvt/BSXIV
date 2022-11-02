@@ -11,7 +11,6 @@ namespace BSXIV
         private DiscordSocketClient _client;
         private InteractionService _interaction;
         private IServiceProvider _services;
-        private LoggingUtils _log;
         
         public CommandHandler(IServiceProvider services)
         {
@@ -30,7 +29,7 @@ namespace BSXIV
 
             if (result.Error != null)
             {
-                await _log.Log(LogSeverity.Error, result.ErrorReason);
+                // await _log.Log(LogSeverity.Error, result.ErrorReason);
             }
         }
 
@@ -41,7 +40,7 @@ namespace BSXIV
             {
                 if (modules.ToArray() == null)
                 {
-                    await _log.Log(LogSeverity.Error, "'modules.ToString()' is null! Commands won't show up!");
+                    // await _log.Log(LogSeverity.Error, "'modules.ToString()' is null! Commands won't show up!");
                 }
                 await _interaction.AddModulesToGuildAsync(servers, true, modules.ToArray());
             }
