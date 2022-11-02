@@ -10,10 +10,5 @@ namespace BSXIV.Utilities
         {
             _logger = logger;
         }
-
-        public void Action(string name)
-        {
-            _logger.Log((LogLevel)20,"Just doing stuff!", name);
-        }
     }
 }

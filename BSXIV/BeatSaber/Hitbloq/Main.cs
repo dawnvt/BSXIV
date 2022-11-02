@@ -5,7 +5,7 @@ using Discord.Interactions;
 using MongoDB.Bson;
 using SkiaSharp;
 
-namespace BSXIV.BeatSaber.Commands.Hitbloq
+namespace BSXIV.BeatSaber.Hitbloq
 {
     [RequireContext(ContextType.Guild)]
     public class Main : InteractionModuleBase

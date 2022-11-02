@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text.Json;
 using BSXIV.Utilities;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace BSXIV.Utilities
@@ -9,7 +10,7 @@ namespace BSXIV.Utilities
     public class WebRequest
     {
         private HttpClient _httpClient;
-        private Log _logging;
+        private ILogger _logger;
 
         public WebRequest()
         {
@@ -17,7 +18,7 @@ namespace BSXIV.Utilities
             _httpClient.DefaultRequestHeaders.Add("User-Agent", 
                 $"{Constants.AppName}/{GetType().Assembly.GetName().Version}");
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
-            // _logging = logging;
+            
         }
 
         internal async Task<Stream?> MakeRequestAsync(string url) => await MakeRequestAsync(new Uri(url));
@@ -32,19 +33,19 @@ namespace BSXIV.Utilities
         internal async Task<Stream?> MakeRequestAsync(Uri url, CancellationToken cancellationToken, 
             Action<float> progressCallback = null!)
         {
-            // await _logging.Log(LogSeverity.Debug, url);
+            
             var webRequest = _httpClient.GetAsync(url, cancellationToken);
             Stream? responseStream = null;
             try
             {
                 var response = await webRequest.ConfigureAwait(false);
-                if(response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                     responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 
             }
             catch (Exception e)
             {
-                // await _logging.Log(LogSeverity.Error, e.Message);
+                _logger.Log(LogLevel.Error, e.Message);
             }
 
             return responseStream;

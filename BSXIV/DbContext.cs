@@ -1,4 +1,5 @@
 ﻿using BSXIV.Utilities;
+using NLog;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -7,6 +8,7 @@ namespace BSXIV
     public class DbContext
     {
         private static MongoClient _client;
+        private static Logger _logger;
 
         public DbContext()
         {
@@ -26,8 +28,10 @@ namespace BSXIV
             settings.ConnectTimeout = TimeSpan.FromSeconds(30);
 #endif
             _client = new MongoClient(settings);
-
+            
+            _logger.Info("Successfully connected to the MongoDB Instance!");
             _client.StartSession();
+            
         }
 
         public void Insert(string collection, BsonDocument insert)

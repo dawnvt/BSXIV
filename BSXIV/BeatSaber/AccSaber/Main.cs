@@ -1,7 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.Interactions;
 
-namespace BSXIV.BeatSaber.Commands.AccSaber
+namespace BSXIV.BeatSaber.AccSaber
 {
     public class Main
     {

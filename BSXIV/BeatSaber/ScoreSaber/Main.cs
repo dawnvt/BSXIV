@@ -4,21 +4,24 @@ using BSXIV.Utilities;
 using Discord;
 using Discord.Interactions;
 using MongoDB.Bson;
+using NLog;
 using SkiaSharp;
 using ZstdSharp.Unsafe;
 
-namespace BSXIV.BeatSaber.Commands.ScoreSaber
+namespace BSXIV.BeatSaber.ScoreSaber
 {
     [RequireContext(ContextType.Guild)]
     public class Main : InteractionModuleBase
     {
         private DbContext _dbContext;
         private WebRequest _webRequest;
+        private Logger _logger;
 
-        public Main(DbContext dbContext, WebRequest request)
+        public Main(DbContext dbContext, WebRequest request, Logger logger)
         {
             _dbContext = dbContext;
             _webRequest = request;
+            _logger = logger;
         }
 
         [RequireUserPermission(GuildPermission.Administrator)]
