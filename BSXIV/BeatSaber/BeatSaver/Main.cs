@@ -1,4 +1,4 @@
-﻿namespace BSXIV.BeatSaber.Commands.Hitbloq
+﻿namespace BSXIV.BeatSaber.BeatSaver
 {
     public class Main
     {

@@ -9,8 +9,11 @@
 
     <ItemGroup>
       <PackageReference Include="Discord.Net" Version="3.8.1" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
       <PackageReference Include="MongoDB.Driver" Version="2.18.0" />
+      <PackageReference Include="NLog" Version="5.0.5" />
+      <PackageReference Include="NLog.Extensions.Logging" Version="5.1.0" />
       <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.3" />
     </ItemGroup>
 
@@ -20,6 +23,9 @@
 
     <ItemGroup>
       <None Remove=".env" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="nlog.config" CopyToOutputDirectory="Always" />
     </ItemGroup>
 
 </Project>
