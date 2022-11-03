@@ -24,6 +24,7 @@ namespace BSXIV
         private IServiceProvider _services;
         private CommandHandler _commands;
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private string env = "null";
 
         public static Version AppVersion;
 
@@ -37,7 +38,8 @@ namespace BSXIV
 
         private async Task MainAsync()
         {
-            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+            
+            env = GatherAndLoadEnv(".env");
             _logger.Info("setting up program!");
 
             var exeAsm = Assembly.GetExecutingAssembly();
@@ -84,6 +86,20 @@ namespace BSXIV
                 })
                 .AddSingleton<WebRequest>(provider => new WebRequest())
                 .BuildServiceProvider();
+        }
+
+        private string GatherAndLoadEnv(string environment)
+        {
+#if DEBUG
+            _logger.Info("Current environment: DEBUG");
+            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), environment));
+            env = Path.Combine(Directory.GetCurrentDirectory(), ".env.development");
+#else
+            _logger.Info("Current environment: RELEASE");
+            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), environment));
+            env = Path.Combine(Directory.GetCurrentDirectory(), ".env.production");
+#endif
+            return env;
         }
     }    
 }
