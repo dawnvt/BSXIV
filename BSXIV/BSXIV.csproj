@@ -20,13 +20,6 @@
     <ItemGroup>
       <Folder Include="FFXIV\Commands" />
     </ItemGroup>
-
-    <ItemGroup>
-      <None Remove=".env" />
-      <Content Include=".env">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
     <ItemGroup>
         <None Update="nlog.config" CopyToOutputDirectory="Always" />
     </ItemGroup>
