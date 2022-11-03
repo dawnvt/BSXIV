@@ -353,4 +353,4 @@ MigrationBackup/
 .ionide/
 
 # Environment Variables
-.env
+.env.*
