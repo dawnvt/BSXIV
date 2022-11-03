@@ -37,8 +37,11 @@ namespace BSXIV
 
         private async Task MainAsync()
         {
-            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
-            
+#if DEBUG
+            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env.development"));
+#else
+            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env.production"));
+#endif
             var exeAsm = Assembly.GetExecutingAssembly();
             AppVersion = exeAsm.GetName().Version ?? new Version(0, 0, 0);
 
