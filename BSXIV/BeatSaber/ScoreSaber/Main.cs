@@ -3,21 +3,23 @@ using System.Text.Json;
 using BSXIV.Utilities;
 using Discord;
 using Discord.Interactions;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using NLog;
 using SkiaSharp;
 using ZstdSharp.Unsafe;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace BSXIV.BeatSaber.ScoreSaber
 {
     [RequireContext(ContextType.Guild)]
+    [Group("scoresaber", "Leaderboard using the ScoreSaber service")]
     public class Main : InteractionModuleBase
     {
         private DbContext _dbContext;
         private WebRequest _webRequest;
-        private Logger _logger;
+        private ILogger _logger;
 
-        public Main(DbContext dbContext, WebRequest request, Logger logger)
+        public Main(DbContext dbContext, WebRequest request, ILogger<Main> logger)
         {
             _dbContext = dbContext;
             _webRequest = request;
@@ -28,12 +30,14 @@ namespace BSXIV.BeatSaber.ScoreSaber
         [SlashCommand("usercount", "ScoreSaber usercount")]
         private async Task UserCount()
         {
-            await RespondAsync(_dbContext.Find("users", new BsonDocument()).Count.ToString());
+            await RespondAsync("Processing...");
+            await ModifyOriginalResponseAsync(content => content.Content = _dbContext.Find("users", new BsonDocument()).Count.ToString());
         }
 
         [SlashCommand("adduser", "Adds your ScoreSaber user")]
         private async Task AddUser(string scoreSaberId)
         {
+            await RespondAsync("Processing...", ephemeral: true);
             var doc = new BsonDocument
             {
                 { "scoreSaberId", scoreSaberId },
@@ -44,13 +48,13 @@ namespace BSXIV.BeatSaber.ScoreSaber
             {
                 _dbContext.Insert("users", doc);
 
-                await RespondAsync($"User {scoreSaberId} added", ephemeral: true);
+                await ModifyOriginalResponseAsync(content => content.Content = $"User {scoreSaberId} added");
             }
             else
             {
                 _dbContext.Update("users", new BsonDocument { { "userId", (long)Context.User.Id } }, doc);
 
-                await RespondAsync($"User {scoreSaberId} updated", ephemeral: true);
+                await ModifyOriginalResponseAsync(content => content.Content = $"User {scoreSaberId} updated");
             }
         }
 
@@ -66,12 +70,13 @@ namespace BSXIV.BeatSaber.ScoreSaber
         [SlashCommand("topscore", "Shows the top score of your ScoreSaber user")]
         private async Task TopScore(string scoreSaberId = "")
         {
+            await RespondAsync("Processing...");
             if (scoreSaberId == string.Empty)
             {
                 var user = _dbContext.FindOne("users", new BsonDocument { { "userId", (long)Context.User.Id } });
                 if (user == null)
                 {
-                    await RespondAsync("You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
+                    await ModifyOriginalResponseAsync(content => content.Content = "You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
                     return;
                 }
 
@@ -86,7 +91,7 @@ namespace BSXIV.BeatSaber.ScoreSaber
 
             if (response == null || userResponse == null)
             {
-                await RespondAsync("Could not get score for user.");
+                await ModifyOriginalResponseAsync(content => content.Content = "Could not get score for user.");
                 return;
             }
 
@@ -104,23 +109,29 @@ namespace BSXIV.BeatSaber.ScoreSaber
                 .AddField("Rank", score.Score.Rank, true)
                 .AddField("Score", score.Score.ModifiedScore, true)
                 .AddField("Pp", score.Score.Pp, true)
+                .AddField("Acc", score.GetAcc, true)
                 .AddField("Difficulty", score.Leaderboard.Difficulty.DifficultyString, true)
                 .AddField("GameMode", score.Leaderboard.Difficulty.GameMode, true)
                 .WithUrl($"https://scoresaber.com/leaderboard/{score.Leaderboard.Id}")
                 .WithCurrentTimestamp();
 
-            await RespondAsync(embed: embed.Build());
+            await ModifyOriginalResponseAsync(message =>
+            {
+                message.Content = null;
+                message.Embed = embed.Build();
+            });
         }
 
         [SlashCommand("recentscore", "Shows the most recent score of your ScoreSaber user")]
         public async Task RecentScore(string scoreSaberId = "")
         {
+            await RespondAsync("Processing...");
             if (scoreSaberId == string.Empty)
             {
                 var user = _dbContext.FindOne("users", new BsonDocument { { "userId", (long)Context.User.Id } });
                 if (user == null)
                 {
-                    await RespondAsync("You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
+                    await ModifyOriginalResponseAsync(message => message.Content = "You haven't added your ScoreSaber user yet. Use `/add <scoreSaberId>` to add your user.");
                     return;
                 }
 
@@ -135,7 +146,7 @@ namespace BSXIV.BeatSaber.ScoreSaber
 
             if (response == null || userResponse == null)
             {
-                await RespondAsync("Could not get score for user.");
+                await ModifyOriginalResponseAsync(message => message.Content = "Could not get score for user.");
                 return;
             }
 
@@ -153,17 +164,23 @@ namespace BSXIV.BeatSaber.ScoreSaber
                 .AddField("Rank", score.Score.Rank, true)
                 .AddField("Score", score.Score.ModifiedScore, true)
                 .AddField("Pp", score.Score.Pp, true)
+                .AddField("Acc", score.GetAcc, true)
                 .AddField("Difficulty", score.Leaderboard.Difficulty.DifficultyString, true)
                 .AddField("GameMode", score.Leaderboard.Difficulty.GameMode, true)
                 .WithUrl($"https://scoresaber.com/leaderboard/{score.Leaderboard.Id}")
                 .WithCurrentTimestamp();
 
-            await RespondAsync(embed: embed.Build());
+            await ModifyOriginalResponseAsync(message =>
+            {
+                message.Content = null;
+                message.Embed = embed.Build();
+            });
         }
 
         [SlashCommand("newestqualified", "Shows the most recent qualified ScoreSaber map")]
         private async Task NewestQualified()
         {
+            await RespondAsync("Processing...");
             var url = $"https://scoresaber.com/api/leaderboards?qualified=true&sort=0";
 
             var result = JsonSerializer.Deserialize<NewestLeaderboard>(await _webRequest.MakeRequestAsync(url).ConfigureAwait(false)!, Program.Options);
@@ -191,19 +208,34 @@ namespace BSXIV.BeatSaber.ScoreSaber
             g /= total;
             b /= total;
 
+            var leaderboard = result?.Leaderboards[0];
+
+            var songName = leaderboard.SongName;
+
+            if (!string.IsNullOrWhiteSpace(leaderboard.SongSubName))
+                songName += " - " + leaderboard.SongSubName;
+
             var embed = new EmbedBuilder()
                 .WithFooter(footer => footer.Text = "Newest Qualified")
                 .WithColor(r, g, b)
-                .WithTitle($"{result?.Leaderboards[0].SongName} - {result?.Leaderboards[0].SongSubName}")
-                .WithImageUrl(result?.Leaderboards[0].CoverImage.AbsoluteUri)
+                .WithTitle(songName)
+                .WithThumbnailUrl(leaderboard.CoverImage.AbsoluteUri)
+                .AddField("Author", leaderboard.SongAuthorName, true)
+                .AddField("Mapper", leaderboard.LevelAuthorName, true)
+                .WithUrl($"https://scoresaber.com/leaderboard/{leaderboard.Id}")
                 .WithCurrentTimestamp();
-
-            await RespondAsync(embed: embed.Build());
+            
+            await ModifyOriginalResponseAsync(message =>
+            {
+                message.Content = null;
+                message.Embed = embed.Build();
+            });
         }
 
         [SlashCommand("newestranked", "Shows the most recent ranked ScoreSaber map")]
         private async Task NewestRanked()
         {
+            await RespondAsync("Processing...");
             var url = $"https://scoresaber.com/api/leaderboards?ranked=true&sort=0";
 
             var result = JsonSerializer.Deserialize<NewestLeaderboard>(_webRequest.MakeRequestAsync(url).ConfigureAwait(false).GetAwaiter().GetResult(), Program.Options);
@@ -231,24 +263,34 @@ namespace BSXIV.BeatSaber.ScoreSaber
             g /= total;
             b /= total;
 
-            var songName = result?.Leaderboards[0].SongName;
+            var leaderboard = result?.Leaderboards[0];
 
-            if (!string.IsNullOrWhiteSpace(result?.Leaderboards[0].SongSubName))
-                songName += " - " + result?.Leaderboards[0].SongSubName;
+            var songName = leaderboard.SongName;
+
+            if (!string.IsNullOrWhiteSpace(leaderboard.SongSubName))
+                songName += " - " + leaderboard.SongSubName;
 
             var embed = new EmbedBuilder()
-                .WithFooter(footer => footer.Text = "Newest Qualified")
+                .WithFooter(footer => footer.Text = "Newest Ranked")
                 .WithColor(r, g, b)
                 .WithTitle(songName)
-                .WithImageUrl(result?.Leaderboards[0].CoverImage.AbsoluteUri)
+                .WithThumbnailUrl(leaderboard.CoverImage.AbsoluteUri)
+                .AddField("Author", leaderboard.SongAuthorName, true)
+                .AddField("Mapper", leaderboard.LevelAuthorName, true)
+                .WithUrl($"https://scoresaber.com/leaderboard/{leaderboard.Id}")
                 .WithCurrentTimestamp();
 
-            await RespondAsync(embed: embed.Build());
+            await ModifyOriginalResponseAsync(message =>
+            {
+                message.Content = null;
+                message.Embed = embed.Build();
+            });
         }
 
         [SlashCommand("leaderboard", "Shows the leaderboard for a given ScoreSaber map")]
         private async Task ShowLeaderboard(int leaderboardId)
         {
+            await RespondAsync("Processing...");
             var url = $"https://scoresaber.com/api/leaderboard/by-id/{leaderboardId}/scores";
             var scoreResponse = await _webRequest.MakeRequestAsync(url).ConfigureAwait(false);
             url = $"https://scoresaber.com/api/leaderboard/by-id/{leaderboardId}/info";
@@ -256,44 +298,48 @@ namespace BSXIV.BeatSaber.ScoreSaber
 
             if (scoreResponse == null || infoResponse == null)
             {
-                await RespondAsync($"No leaderboard found for `{leaderboardId}`. Did you specify the right leaderboard id?");
+                await ModifyOriginalResponseAsync(content => content.Content = $"No leaderboard found for `{leaderboardId}`. Did you specify the right leaderboard id?");
+                return;
             }
-            else
+
+            var leaderboardScores = JsonSerializer.Deserialize<LeaderboardScores>(scoreResponse, Program.Options);
+            var leaderboard = JsonSerializer.Deserialize<Leaderboard>(infoResponse, Program.Options);
+
+            if (leaderboardScores == null)
             {
-                var leaderboardScores = JsonSerializer.Deserialize<LeaderboardScores>(scoreResponse, Program.Options);
-                var leaderboard = JsonSerializer.Deserialize<Leaderboard>(infoResponse, Program.Options);
-
-                if (leaderboardScores == null)
-                {
-                    await RespondAsync($"Response gotten from {leaderboardId} was empty. Something was wrong.");
-                }
-
-                var songName = leaderboard?.SongName;
-
-                if (!string.IsNullOrWhiteSpace(leaderboard?.SongSubName))
-                    songName += " - " + leaderboard?.SongSubName;
-
-                var embed = new EmbedBuilder()
-                    .WithTitle($"{songName}")
-                    .AddField("Song Author", leaderboard?.SongAuthorName, true)
-                    .AddField("Difficulty", leaderboard?.Difficulty.DifficultyString, true)
-                    .AddField("GameMode", leaderboard?.Difficulty.GameMode, true)
-                    .WithColor(0xffde1a)
-                    .WithThumbnailUrl(leaderboard.CoverImage.AbsoluteUri)
-                    .WithUrl($"https://scoresaber.com/leaderboard/{leaderboardId}")
-                    .WithCurrentTimestamp();
-
-                if (leaderboardScores?.Scores != null)
-                {
-                    foreach (var score in leaderboardScores.Scores.Take(10))
-                    {
-                        embed.AddField($"{score.Rank} - {score.LeaderboardPlayerInfo.Name}",
-                            $"{score.ModifiedScore} - {score.Pp}pp");
-                    }
-                }
-
-                await RespondAsync(embed: embed.Build());
+                await ModifyOriginalResponseAsync(content => content.Content = $"Response gotten from {leaderboardId} was empty. Something was wrong.");
+                return;
             }
+
+            var songName = leaderboard?.SongName;
+
+            if (!string.IsNullOrWhiteSpace(leaderboard?.SongSubName))
+                songName += " - " + leaderboard?.SongSubName;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"{songName}")
+                .AddField("Song Author", leaderboard?.SongAuthorName, true)
+                .AddField("Difficulty", leaderboard?.Difficulty.DifficultyString, true)
+                .AddField("GameMode", leaderboard?.Difficulty.GameMode, true)
+                .WithColor(0xffde1a)
+                .WithThumbnailUrl(leaderboard.CoverImage.AbsoluteUri)
+                .WithUrl($"https://scoresaber.com/leaderboard/{leaderboardId}")
+                .WithCurrentTimestamp();
+
+            if (leaderboardScores?.Scores != null)
+            {
+                foreach (var score in leaderboardScores.Scores.Take(10))
+                {
+                    embed.AddField($"{score.Rank} - {score.LeaderboardPlayerInfo.Name}",
+                        $"{score.ModifiedScore} - {score.Pp}pp");
+                }
+            }
+
+            await ModifyOriginalResponseAsync(message =>
+            {
+                message.Content = null;
+                message.Embed = embed.Build();
+            });
         }
     }
 
@@ -326,6 +372,9 @@ namespace BSXIV.BeatSaber.ScoreSaber
     {
         public Score Score { get; set; }
         public Leaderboard Leaderboard { get; set; }
+
+        public string GetAcc =>
+            Leaderboard.MaxScore == null ? "???" : ((double)Score.BaseScore / Leaderboard.MaxScore.Value * 100).ToString("F2");
     }
 
     public class Leaderboard
@@ -337,7 +386,7 @@ namespace BSXIV.BeatSaber.ScoreSaber
         public string SongAuthorName { get; set; }
         public string LevelAuthorName { get; set; }
         public Difficulty Difficulty { get; set; }
-        public long MaxScore { get; set; }
+        public long? MaxScore { get; set; }
         public DateTimeOffset? CreatedDate { get; set; }
         public DateTimeOffset? RankedDate { get; set; }
         public DateTimeOffset? QualifiedDate { get; set; }

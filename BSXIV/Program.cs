@@ -12,9 +12,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NLog;
 using NLog.Extensions.Logging;
-using DLogSeverity = Discord.LogSeverity;
 using StackExchange.Redis;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -25,7 +23,7 @@ namespace BSXIV
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private CommandHandler _commands;
-        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private ILogger _logger;
 
         public static Version AppVersion;
 
@@ -40,15 +38,41 @@ namespace BSXIV
         private async Task MainAsync()
         {
             DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
-            _logger.Info("setting up program!");
+            _services = ConfigureServices();
+            _logger = _services.GetRequiredService<ILogger<Program>>();
+            _logger.LogInformation("setting up program!");
 
             var exeAsm = Assembly.GetExecutingAssembly();
             AppVersion = exeAsm.GetName().Version ?? new Version(0, 0, 0);
 
-            _services = ConfigureServices();
             
             _client = _services.GetRequiredService<DiscordSocketClient>();
 
+            _client.Log += message =>
+            {
+                switch(message.Severity)
+                {
+                    case LogSeverity.Critical:
+                        _logger.LogCritical(message.Exception, message.Message);
+                        break;
+                    case LogSeverity.Error:
+                        _logger.LogError(message.Exception, message.Message);
+                        break;
+                    case LogSeverity.Warning:
+                        _logger.LogWarning(message.Exception, message.Message);
+                        break;
+                    case LogSeverity.Info:
+                        _logger.LogInformation(message.Exception, message.Message);
+                        break;
+                    case LogSeverity.Verbose:
+                        _logger.LogTrace(message.Exception, message.Message);
+                        break;
+                    case LogSeverity.Debug:
+                        _logger.LogDebug(message.Exception, message.Message);
+                        break;
+                };
+                return Task.CompletedTask;
+            };
 
             _client.Ready += async () =>
             {
@@ -60,7 +84,7 @@ namespace BSXIV
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
             
-            _logger.Info("Ready!");
+            _logger.LogInformation("Ready!");
             
             await Task.Delay(-1);
         }
@@ -74,21 +98,29 @@ namespace BSXIV
             
             var disConfig = new DiscordSocketConfig { MessageCacheSize = 100 };
             return new ServiceCollection()
-                .AddSingleton(new DiscordSocketClient(disConfig))
-                .AddSingleton(provider => new InteractionService(provider.GetRequiredService<DiscordSocketClient>()))
-                .AddSingleton<CommandHandler>()
-                .AddSingleton<DbContext>()
                 .AddLogging(log =>
                 {
                     log.ClearProviders();
                     log.SetMinimumLevel(LogLevel.Trace);
                     log.AddNLog(logConfig);
                 })
-                .AddSingleton<WebRequest>(provider => new WebRequest())
-                .AddSingleton<LodestoneRequester>()
+                .AddSingleton(new DiscordSocketClient(disConfig))
+                .AddInstancedSingleton<InteractionService>()
+                .AddInstancedSingleton<CommandHandler>()
+                .AddInstancedSingleton<DbContext>()
+                .AddInstancedSingleton<WebRequest>()
+                .AddInstancedSingleton<LodestoneRequester>()
                 .AddSingleton(_ => ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS")!))
-                .AddSingleton(provider => new CharacterProcessor(provider.GetRequiredService<LoggingUtils>(), provider.GetRequiredService<LodestoneRequester>(), provider.GetRequiredService<DbContext>(), provider.GetRequiredService<ConnectionMultiplexer>()))
+                .AddInstancedSingleton<CharacterProcessor>()
                 .BuildServiceProvider();
         }
-    }    
+    }
+
+    public static class Extension
+    {
+        public static IServiceCollection AddInstancedSingleton<T>(this IServiceCollection collection) where T : class
+        {
+            return collection.AddSingleton(provider => ActivatorUtilities.CreateInstance<T>(provider));
+        }
+    }
 }

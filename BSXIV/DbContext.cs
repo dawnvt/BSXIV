@@ -1,5 +1,5 @@
 ﻿using BSXIV.Utilities;
-using NLog;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -8,10 +8,11 @@ namespace BSXIV
     public class DbContext
     {
         private static MongoClient _client;
-        private static Logger _logger;
+        private static ILogger _logger;
 
-        public DbContext()
+        public DbContext(ILogger<DbContext> logger)
         {
+            _logger = logger;
             MongoConnection();
         }
 
@@ -29,7 +30,7 @@ namespace BSXIV
 #endif
             _client = new MongoClient(settings);
             
-            _logger.Info("Successfully connected to the MongoDB Instance!");
+            _logger.LogInformation("Successfully connected to the MongoDB Instance!");
             _client.StartSession();
             
         }

@@ -3,7 +3,7 @@ using BSXIV.Utilities;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using NLog;
+using Microsoft.Extensions.Logging;
 
 namespace BSXIV
 {
@@ -12,15 +12,15 @@ namespace BSXIV
         private DiscordSocketClient _client;
         private InteractionService _interaction;
         private IServiceProvider _services;
-        private Logger _logger;
+        private ILogger _logger;
         
-        public CommandHandler(IServiceProvider services)
+        public CommandHandler(DiscordSocketClient client, InteractionService interaction, ILogger<CommandHandler> logger, IServiceProvider services)
         {
-            _client = services.GetRequiredService<DiscordSocketClient>();
-            _interaction = services.GetRequiredService<InteractionService>();
+            _client = client;
+            _interaction = interaction;
             _services = services;
 
-            _logger = services.GetRequiredService<Logger>();
+            _logger = logger;
 
             _client.SlashCommandExecuted += SlashCommand;
         }
@@ -33,7 +33,7 @@ namespace BSXIV
 
             if (result.Error != null)
             { 
-                _logger.Error(result.ErrorReason);
+                _logger.LogError(result.ErrorReason);
             }
         }
 
@@ -44,7 +44,7 @@ namespace BSXIV
             {
                 if (modules.ToArray() == null)
                 {
-                    _logger.Error("'modules.ToString()' is null! Commands won't show up!");
+                    _logger.LogError("'modules.ToString()' is null! Commands won't show up!");
                 }
                 await _interaction.AddModulesToGuildAsync(servers, true, modules.ToArray());
             }

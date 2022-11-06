@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using BSXIV.Utilities;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace BSXIV.FFXIV.Lodestone
@@ -7,11 +8,11 @@ namespace BSXIV.FFXIV.Lodestone
     public class CharacterProcessor
     {
         private LodestoneRequester _lodestoneRequester;
-        private LoggingUtils _logging;
+        private ILogger _logging;
         private DbContext _dbContext;
         private IDatabase _redis;
 
-        public CharacterProcessor(LoggingUtils logging, LodestoneRequester lodestoneRequester, DbContext dbContext, ConnectionMultiplexer connectionMultiplexer)
+        public CharacterProcessor(ILogger<CharacterProcessor> logging, LodestoneRequester lodestoneRequester, DbContext dbContext, ConnectionMultiplexer connectionMultiplexer)
         {
             _logging = logging;
             _lodestoneRequester = lodestoneRequester;

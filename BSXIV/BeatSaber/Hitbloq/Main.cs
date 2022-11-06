@@ -8,6 +8,7 @@ using SkiaSharp;
 namespace BSXIV.BeatSaber.Hitbloq
 {
     [RequireContext(ContextType.Guild)]
+    [Group("hitbloq", "Leaderboard using the HitBlock service")]
     public class Main : InteractionModuleBase
     {
         private DbContext _dbContext;
